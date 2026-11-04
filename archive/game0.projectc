@@ -250,6 +250,12 @@ max_time_step = 0.033333
 
 [native_extension]
 
+[websocket]
+buffer_size = 65536
+max_connections = 2
+debug = disabled
+socket_timeout = 500000
+
 [gameobject]
 max_count = 8192
 

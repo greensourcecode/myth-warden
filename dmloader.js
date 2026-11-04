@@ -226,9 +226,9 @@ var FileLoader = {
 var EngineLoader = {
     arc_sha1: "",
     wasm_sha1: "",
-    wasm_size: 2385802,
+    wasm_size: 2403320,
     wasmjs_sha1: "",
-    wasmjs_size: 274995,
+    wasmjs_size: 280886,
     wasm_pthread_sha1: "",
     wasm_pthread_size: 2000000,
     wasmjs_pthread_sha1: "",

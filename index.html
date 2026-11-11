@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Defold's page template (builtins/manifests/web/engine_template.html, Defold 1.13.1) with Myth Warden's head: see the comment in it. -->
 <html lang="en">
 <head>
 	<meta charset="utf-8">
@@ -7,7 +8,26 @@
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<!-- The above 4 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
-	<title>Myth Warden 1.0</title>
+	<title>Myth Warden</title>
+	<!-- (Myth Warden's own, owner's polish pick 20, 2026-11-10: the tab's icon and what a shared link shows; the
+	     pictures are web/site's, put beside the game by tools/publish.lua: tools/generate_web_images.lua makes them) -->
+	<meta name="description" content="Myth Warden: tame the beasts and gods of seven mythologies, and beat the Wardens. Free, in your browser.">
+	<link rel="icon" type="image/png" href="favicon.png">
+	<!-- (installable: added to a phone's home screen it opens full screen, without the browser's bars; the owner's 52,
+	     2026-11-11: manifest.webmanifest, web/site) -->
+	<link rel="manifest" href="manifest.webmanifest">
+	<link rel="apple-touch-icon" href="icon-192.png">
+	<meta name="theme-color" content="#0b0c14">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<meta name="apple-mobile-web-app-title" content="Myth Warden">
+	<meta property="og:type" content="website">
+	<meta property="og:title" content="Myth Warden">
+	<meta property="og:description" content="Tame the beasts and gods of seven mythologies, and beat the Wardens. Free, in your browser.">
+	<meta property="og:image" content="https://greensourcecode.github.io/myth-warden/share.png">
+	<meta property="og:url" content="https://greensourcecode.github.io/myth-warden/">
+	<meta name="twitter:card" content="summary_large_image">
 	<style type='text/css'>
 	/* Disable user selection to avoid strange bug in Chrome on Windows:
 	* Selecting a text outside the canvas, then clicking+draging would
@@ -68,19 +88,26 @@
    A copy of Defold's builtins/manifests/web/dark_theme.css with the loading bar in the menus'
    gold (main/theme.lua SELECTED) on a dark brown track instead of blue on gray, plus a
    "rotate your phone" overlay for touch screens held upright (iPhones can't lock landscape). */
+	/* (owner's polish pick 20, 2026-11-10: a framed gold bar in the middle, under the loading picture, not a
+	   thin line across the page's bottom) */
 	.canvas-app-progress {
 		position: absolute;
+		left: 25%;
+		width: 50%;
+		height: 10px;
+		margin-top: -34px;
 		background-color: #2b2416;
-		height: 6px;
-		margin-top: -6px;
-		width: 100%;
+		border: 2px solid #8a6420;
+		border-radius: 7px;
+		box-shadow: 0 0 0 2px #120e08;
+		overflow: hidden;
 	}
 
 	.canvas-app-progress-bar {
 		font-size: 12px;
-		height: 6px;
+		height: 10px;
 		color: rgb(255, 255, 255);
-		background-color: #d99e33;
+		background: linear-gradient(#f6cf6a, #d99e33 55%, #a8731f);
 		text-align: center;
 		line-height: 20px;
 		transition: transform 1s ease;
@@ -164,6 +191,22 @@
 		</div>
 	</div>
 	<!-- -->
+	<script>
+		// The browser keeps the game's files (sw.js, web/site: the owner's 53, 2026-11-11), on the published site only.
+		// When a new build's worker takes over a page another worker was serving, the page reloads once, so it runs
+		// one build's files only (the first visit has none before it: no reload then).
+		if ("serviceWorker" in navigator && location.protocol === "https:") {
+			var mythWardenHadWorker = !!navigator.serviceWorker.controller;
+			var mythWardenReloaded = false;
+			navigator.serviceWorker.addEventListener("controllerchange", function () {
+				if (mythWardenHadWorker && !mythWardenReloaded) {
+					mythWardenReloaded = true;
+					window.location.reload();
+				}
+			});
+			navigator.serviceWorker.register("sw.js").catch(function () {});
+		}
+	</script>
 	<script>
 		// Fallback to make sure globalThis is available when running in an old
 		// browser (available from Chome 71)

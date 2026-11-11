@@ -1,0 +1,16 @@
+{
+    "name": "Myth Warden",
+    "short_name": "Myth Warden",
+    "description": "Tame the entities of the old myths and beat the seven Wardens.",
+    "start_url": "./",
+    "scope": "./",
+    "display": "fullscreen",
+    "orientation": "landscape",
+    "background_color": "#0b0c14",
+    "theme_color": "#0b0c14",
+    "icons": [
+        { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+        { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ]
+}

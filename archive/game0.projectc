@@ -90,7 +90,7 @@ max_sound_data = 128
 max_sound_buffers = 32
 max_sound_sources = 16
 max_sound_instances = 256
-max_component_count = 32
+max_component_count = 64
 sample_frame_count = 0
 use_thread = 1
 stream_enabled = 0
@@ -189,7 +189,7 @@ localizations = en
 [html5]
 custom_heap_size = 0
 heap_size = 256
-htmlfile = /builtins/manifests/web/engine_template.html
+htmlfile = /web/engine_template.html
 cssfile = /web/myth_warden.css
 splash_image = /assets/generated/splash/web_loading.png
 archive_location_prefix = archive

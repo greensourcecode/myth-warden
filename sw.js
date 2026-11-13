@@ -4,7 +4,7 @@
 // build's worker takes over at once (skipWaiting, claim) and the page reloads once to be served by it
 // (web/engine_template.html), so a page never runs one build's files with another's. The page itself is asked of
 // the network first (the newest; the cache if there's no connection), every other file of the cache first.
-const BUILD = "25e266788b75";
+const BUILD = "a10f01592e73";
 const CACHE = "myth-warden-" + BUILD;
 
 self.addEventListener("install", () => {

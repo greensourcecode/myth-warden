@@ -3,8 +3,10 @@
 // One cache a build: "myth-warden-" + BUILD (tools/publish.lua writes the build's id here as it publishes). A new
 // build's worker takes over at once (skipWaiting, claim) and the page reloads once to be served by it
 // (web/engine_template.html), so a page never runs one build's files with another's. The page itself is asked of
-// the network first (the newest; the cache if there's no connection), every other file of the cache first.
-const BUILD = "21dac37cda47";
+// the network first (the newest; the cache if there's no connection), every other file of the cache first: the
+// engine's, the archive, the zones as they're fetched and the music and art the game fetches in the background after
+// the start (streamed/: main/streamed.lua, 2026-11-19), so after one whole visit a second one has all of them offline.
+const BUILD = "b332f16f420b";
 const CACHE = "myth-warden-" + BUILD;
 
 self.addEventListener("install", () => {

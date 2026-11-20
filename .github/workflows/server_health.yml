@@ -1,0 +1,34 @@
+# Is Myth Warden's server up? Every 10 minutes GitHub asks the server's /healthcheck, and the run FAILS when it gets no
+# answer three times in a row (a minute apart): GitHub emails the repository's owner about a failed scheduled run.
+# This file is the game project's web/pages_repo/.github/workflows/server_health.yml: tools/publish.lua puts it into
+# the Pages repo on every publish, with the server's address from main/online/server_config.lua RELEASE (so a new
+# domain changes it by itself). Edit it there, not here. docs/NETWORKING.md "Is the server up?".
+name: Server health
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: The server answers its healthcheck
+        env:
+          URL: https://5-161-253-66.sslip.io/healthcheck
+        run: |
+          for try in 1 2 3; do
+            if curl --fail --silent --show-error --max-time 20 "$URL"; then
+              echo
+              echo "The server is up ($URL)."
+              exit 0
+            fi
+            echo "Try $try: no answer from $URL"
+            if [ "$try" -lt 3 ]; then sleep 60; fi
+          done
+          echo "::error::Myth Warden's server is down: $URL didn't answer three times in a row."
+          exit 1

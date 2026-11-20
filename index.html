@@ -151,8 +151,9 @@
 		background-size: contain;
 		background-image: url("web_loading.png");
 	}
+	/* Not on Android (html.android, main/save/settings.lua): the game is locked in full screen and landscape there */
 	@media (orientation: portrait) and (pointer: coarse) {
-		body::after {
+		html:not(.android) body::after {
 			content: "Please rotate your phone";
 			position: fixed;
 			top: 0; left: 0; right: 0; bottom: 0;

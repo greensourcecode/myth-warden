@@ -6,7 +6,7 @@
 // the network first (the newest; the cache if there's no connection), every other file of the cache first: the
 // engine's, the archive, the zones as they're fetched and the music and art the game fetches in the background after
 // the start (streamed/: main/streamed.lua, 2026-11-19), so after one whole visit a second one has all of them offline.
-const BUILD = "426db04c297d";
+const BUILD = "e11ce3d29f9f";
 const CACHE = "myth-warden-" + BUILD;
 
 self.addEventListener("install", () => {
@@ -27,6 +27,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
     const request = event.request;
     if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) {
+        return;
+    }
+    // (the game asking which build is published, main/update_check.lua: always the site's own answer, never kept)
+    if (new URL(request.url).pathname.endsWith("/sw.js")) {
         return;
     }
     if (request.mode === "navigate") {

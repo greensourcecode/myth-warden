@@ -191,19 +191,141 @@
 		</div>
 	</div>
 	<!-- -->
-	<script>
-		// The browser keeps the game's files (sw.js, web/site: the owner's 53, 2026-11-11), on the published site only.
-		// When a new build's worker takes over a page another worker was serving, the page reloads once, so it runs
-		// one build's files only (the first visit has none before it: no reload then).
-		if ("serviceWorker" in navigator && location.protocol === "https:") {
-			var mythWardenHadWorker = !!navigator.serviceWorker.controller;
-			var mythWardenReloaded = false;
-			navigator.serviceWorker.addEventListener("controllerchange", function () {
-				if (mythWardenHadWorker && !mythWardenReloaded) {
-					mythWardenReloaded = true;
-					window.location.reload();
+	<script id="myth-warden-page">
+		// Myth Warden's own page code (tests/unit/test_web_page.lua plays this block in headless Chromium; this file is
+		// a template: never two braces in a row in it).
+		//
+		// 1. A new version published while this page is open (owner's report, 2026-11-24: "the music stopped playing
+		//    then shortly after the game crashed"; the owner publishes often and plays in a tab that was open before).
+		//    The browser keeps the game's files (sw.js, web/site: the owner's 53, 2026-11-11), a cache a build, on the
+		//    published site only. When a new build's worker takes over a page another worker was serving, the page must
+		//    not go on with one build's game and another's files. Until 2026-11-24 it reloaded itself there and then,
+		//    whenever that was: in the first seconds of a visit, which is right and stays; but also in the middle of
+		//    play (the browser looks for a new sw.js when another tab opens the game, or a day after it last looked),
+		//    which to the player was the game vanishing and starting over with no word said. Past the first
+		//    START_SECONDS the page now says so instead: "Myth Warden was updated", RELOAD NOW or LATER (to finish a
+		//    battle first; it asks again LATER_SECONDS on). The game itself asks the site which build is published
+		//    every few minutes (main/update_check.lua) and shows the same notice, so it comes within minutes of a
+		//    publish, not a day later.
+		// 2. A crash is said, and kept (the same report: nothing told the player, or us, what had happened). An error
+		//    of the engine's (the WebAssembly out of memory, an abort), or the browser taking the graphics away
+		//    (webglcontextlost), shows "Myth Warden stopped" with RELOAD, and a line about it (what, how long the game
+		//    had run, how large its memory was) is kept in the browser (localStorage "myth_warden_crash"): the game
+		//    reads it the next time it starts and sends it to the server's log (main/crash_notes.lua).
+		window.mythWardenPage = (function () {
+			var START_SECONDS = 20, LATER_SECONDS = 600;
+			var CRASH_KEY = "myth_warden_crash";
+			var page = { started: Date.now(), notice: null, updated: false, stopped: false };
+			page.reload = function () { window.location.reload(); };
+			function megabytes() {
+				try { return Math.round(Module.HEAP8.length / 1048576); } catch (problem) { return 0; }
+			}
+			function button(text, action) {
+				var element = document.createElement("button");
+				element.textContent = text;
+				element.style.cssText = "font:inherit;margin:14px 8px 0;padding:8px 18px;color:#f0d890;background:#1c1e30;"
+					+ "border:2px solid #c8a850;border-radius:4px;cursor:pointer";
+				element.addEventListener("click", action);
+				return element;
+			}
+			// A window over the game: a heading, a line under it, its buttons ([text, action] each)
+			function show(id, heading, line, buttons) {
+				if (page.notice) { page.notice.remove(); }
+				var back = page.notice = document.createElement("div");
+				back.id = id;
+				back.style.cssText = "position:fixed;left:0;top:0;right:0;bottom:0;z-index:1000;display:flex;align-items:center;"
+					+ "justify-content:center;background:rgba(11,12,20,0.6);font:bold 16px sans-serif;text-align:center";
+				var box = document.createElement("div");
+				box.style.cssText = "max-width:80%;padding:18px 22px;color:#ffffff;background:#0b0c14;border:3px solid #c8a850;"
+					+ "border-radius:6px";
+				var title = document.createElement("div");
+				title.textContent = heading;
+				title.style.cssText = "color:#f0d890;font-size:20px;margin-bottom:8px";
+				var words = document.createElement("div");
+				words.textContent = line;
+				words.style.cssText = "font-weight:normal";
+				box.appendChild(title);
+				box.appendChild(words);
+				for (var i = 0; i < buttons.length; i++) {
+					box.appendChild(button(buttons[i][0], buttons[i][1]));
 				}
-			});
+				back.appendChild(box);
+				document.body.appendChild(back);
+			}
+			// The notice of a new version (also called by the game: main/update_check.lua); a crash's notice stays
+			page.showUpdate = function () {
+				page.updated = true;
+				if (page.stopped || (page.notice && page.notice.id === "update-notice")) { return; }
+				var later = function () {
+					page.notice.remove();
+					page.notice = null;
+					window.setTimeout(page.showUpdate, LATER_SECONDS * 1000);
+				};
+				show("update-notice", "MYTH WARDEN WAS UPDATED",
+					"Reload the page to play the new version (F5). In a battle? Finish it first.",
+					[["RELOAD NOW", function () { page.reload(); }], ["LATER", later]]);
+			};
+			// A new build's worker took over (container: navigator.serviceWorker)
+			page.watchWorker = function (container) {
+				var hadWorker = !!container.controller, handled = false;
+				container.addEventListener("controllerchange", function () {
+					if (!hadWorker || handled) { return; }
+					handled = true;
+					if (Date.now() - page.started < START_SECONDS * 1000) {
+						page.reload();
+					} else {
+						page.showUpdate();
+					}
+				});
+			};
+			// The game stopped: said, and kept for the next start (what: a short line)
+			page.crashed = function (what) {
+				if (page.stopped) { return; }
+				page.stopped = true;
+				var note = String(what).slice(0, 300) + " | after " + Math.round((Date.now() - page.started) / 60000)
+					+ " min | memory " + megabytes() + " MB | " + new Date().toISOString();
+				try { window.localStorage.setItem(CRASH_KEY, note); } catch (problem) { }
+				show("crash-notice", "MYTH WARDEN STOPPED",
+					"Sorry: the game hit a problem and can't go on. Reload the page to play on from your last save.",
+					[["RELOAD", function () { page.reload(); }]]);
+			};
+			// The last crash's line, once (the game asks as it starts: main/crash_notes.lua)
+			page.takeCrash = function () {
+				try {
+					var note = window.localStorage.getItem(CRASH_KEY) || "";
+					window.localStorage.removeItem(CRASH_KEY);
+					return note;
+				} catch (problem) {
+					return "";
+				}
+			};
+			// An error is the engine's when it says so, or comes from the engine's own files (a browser extension's
+			// isn't, nor a picture that wouldn't load)
+			page.isEngineError = function (message, source) {
+				message = String(message || "");
+				return /RuntimeError|Aborted\(|[Oo]ut of memory|memory access out of bounds|unreachable|index out of bounds/.test(message)
+					|| (/_wasm\.js|\.wasm|dmloader\.js/.test(String(source || "")) && /Error/.test(message));
+			};
+			page.watchErrors = function (target, canvas) {
+				target.addEventListener("error", function (event) {
+					var message = (event && (event.message || (event.error && event.error.message))) || "";
+					if (page.isEngineError(message, event && event.filename)) { page.crashed("error: " + message); }
+				});
+				target.addEventListener("unhandledrejection", function (event) {
+					var message = (event && event.reason && (event.reason.message || event.reason)) || "";
+					if (page.isEngineError(message, "")) { page.crashed("error: " + message); }
+				});
+				if (canvas) {
+					canvas.addEventListener("webglcontextlost", function () {
+						page.crashed("the browser took the graphics away (webglcontextlost)");
+					});
+				}
+			};
+			return page;
+		})();
+		window.mythWardenPage.watchErrors(window, document.getElementById("canvas"));
+		if ("serviceWorker" in navigator && location.protocol === "https:") {
+			window.mythWardenPage.watchWorker(navigator.serviceWorker);
 			navigator.serviceWorker.register("sw.js").catch(function () {});
 		}
 	</script>
